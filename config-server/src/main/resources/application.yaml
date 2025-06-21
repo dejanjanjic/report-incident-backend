@@ -9,15 +9,12 @@ spring:
         encrypt:
           enabled: false
         git:
-          uri: https://github.com/vanja-djenadija/config-repo.git
+          default-label: master
+          uri: https://github.com/dejanjanjic/report-incident-config-server.git
           searchPaths:
             - incident-service
             - moderation-service
             - auth-service
-            - user-service
-            - analytics-service
             - alert-service
-            - nlp-service
-            - gateway-service
           username: ${GIT_USERNAME}
           password: ${GIT_PASSWORD}

@@ -23,7 +23,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/incidents")
@@ -49,8 +48,8 @@ public class IncidentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Incident> findById(@PathVariable long id) {
-        Optional<Incident> incident = Optional.ofNullable(incidentService.findById(id));
-        return incident.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+        Incident incident = incidentService.findById(id);
+        return ResponseEntity.ok(incident);
     }
 
     @PostMapping
