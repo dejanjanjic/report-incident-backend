@@ -16,5 +16,6 @@ spring:
             - moderation-service
             - auth-service
             - alert-service
+            - api-gateway
           username: ${GIT_USERNAME}
           password: ${GIT_PASSWORD}
