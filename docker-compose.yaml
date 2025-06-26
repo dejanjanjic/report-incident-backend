@@ -26,6 +26,11 @@ services:
   config-server:
     build: ./config-server
     container_name: config-server
+    environment:
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_PASSWORD=${GIT_PASSWORD}
+    ports:
+      - "8888:8888"
     networks:
       - ims-network
     healthcheck:
@@ -38,77 +43,78 @@ services:
   discovery-server:
     build: ./discovery-server
     container_name: discovery-server
-    environment:
-      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
-      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8761:8761"
     networks:
       - ims-network
-    depends_on:
-      - config-server
-
-  incident-service:
-    build: ./incident-service
-    container_name: incident-service
-    environment:
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${INCIDENT_DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${INCIDENT_DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${INCIDENT_DB_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
-    networks:
-      - ims-network
-
-    depends_on:
-      config-server:
-        condition: service_healthy
-      mysql:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-      discovery-server:
-        condition: service_started
-    restart: on-failure
-
-
-  moderation-service:
-    build: ./moderation-service
-    container_name: moderation-service
-    environment:
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MODERATION_DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${MODERATION_DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MODERATION_DB_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
-    networks:
-      - ims-network
-    depends_on:
-      config-server:
-        condition: service_healthy
-      mysql:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-      discovery-server:
-        condition: service_started
-    restart: on-failure
 
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
     ports:
       - "8080:8080"
+    networks:
+      - ims-network
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka
-      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
-      - SPRING_PROFILES_ACTIVE=docker
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     depends_on:
-      - discovery-server
-      - config-server
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    restart: on-failure
 
+  incident-service:
+    build: ./incident-service
+    container_name: incident-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${INCIDENT_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${INCIDENT_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${INCIDENT_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    networks:
+      - ims-network
+
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+    restart: on-failure
+
+
+#  moderation-service:
+#    build: ./moderation-service
+#    container_name: moderation-service
+#    ports:
+#      - "8082:8082"
+#    environment:
+#      SPRING_PROFILES_ACTIVE: docker
+#      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MODERATION_DB_NAME}
+#      SPRING_DATASOURCE_USERNAME: ${MODERATION_DB_USER}
+#      SPRING_DATASOURCE_PASSWORD: ${MODERATION_DB_PASSWORD}
+#      RABBITMQ_HOST: rabbitmq
+#    networks:
+#      - ims-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#      mysql:
+#        condition: service_started
+#      rabbitmq:
+#        condition: service_started
+#      discovery-server:
+#        condition: service_started
+#    restart: on-failure
 
 networks:
   ims-network:
