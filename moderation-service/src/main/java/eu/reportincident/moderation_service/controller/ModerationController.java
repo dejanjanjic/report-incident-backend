@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/moderation")
-public class ModerationController {
+public class    ModerationController {
 
     private final ModerationService moderationService;
 
