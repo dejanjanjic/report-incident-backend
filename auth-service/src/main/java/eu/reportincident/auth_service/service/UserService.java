@@ -25,15 +25,13 @@ public class UserService {
 
         User user;
         if (userOptional.isPresent()) {
-            // Korisnik već postoji, ažuriraj ime ako je potrebno
             user = userOptional.get();
             user.setFullName(name);
         } else {
-            // Kreiraj novog korisnika
             user = User.builder()
                     .username(email)
                     .fullName(name)
-                    .role(Role.ROLE_MODERATOR) // Svi sa ETF domenom su moderatori
+                    .role(Role.ROLE_USER)
                     .build();
         }
         return userRepository.save(user);

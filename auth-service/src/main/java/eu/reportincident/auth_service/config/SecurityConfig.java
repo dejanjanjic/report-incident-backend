@@ -2,6 +2,7 @@ package eu.reportincident.auth_service.config;
 
 import eu.reportincident.auth_service.model.User;
 import eu.reportincident.auth_service.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -68,8 +69,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-    private void redirectToFrontendWithError(jakarta.servlet.http.HttpServletResponse response, String message) throws java.io.IOException {
-        String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.toString());
+    private void redirectToFrontendWithError(HttpServletResponse response, String message) throws java.io.IOException {
+        String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
         response.sendRedirect(frontendUrl + "/login?error=" + encodedMessage);
     }
 }

@@ -22,15 +22,15 @@ public class JwtService {
     private String secretKey;
     @Value("${token.expiration.time}")
     private Long expirationTime;
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+//    public String extractUsername(String token) {
+//        return extractClaim(token, Claims::getSubject);
+//    }
 
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
+//    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+//        final Claims claims = extractAllClaims(token);
+//        return claimsResolver.apply(claims);
+//    }
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
@@ -49,24 +49,24 @@ public class JwtService {
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
+//    public boolean validateToken(String token, UserDetails userDetails) {
+//        final String username = extractUsername(token);
+//        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+//    }
+//    private boolean isTokenExpired(String token) {
+//        return extractExpiration(token).before(new Date());
+//    }
+//    private Date extractExpiration(String token) {
+//        return extractClaim(token, Claims::getExpiration);
+//    }
+//    private Claims extractAllClaims(String token) {
+//        return Jwts
+//                .parserBuilder()
+//                .setSigningKey(getSignInKey())
+//                .build()
+//                .parseClaimsJws(token)
+//                .getBody();
+//    }
 
     private Key getSignInKey() {
         byte[] keyBites = Decoders.BASE64.decode(secretKey);
