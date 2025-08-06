@@ -17,23 +17,26 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public User processOAuth2User(OAuth2User oauth2User) {
+    public User saveUser(OAuth2User oauth2User) {
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
 
-        Optional<User> userOptional = userRepository.findByUsername(email);
-
-        User user;
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-            user.setFullName(name);
-        } else {
-            user = User.builder()
+        User user = User.builder()
                     .username(email)
                     .fullName(name)
                     .role(Role.ROLE_USER)
                     .build();
-        }
+
         return userRepository.save(user);
+    }
+
+    public User findUser(OAuth2User oauthUser) {
+        String email = oauthUser.getAttribute("email");
+
+        if (userRepository.findByUsername(email).isPresent()) {
+            return userRepository.findByUsername(email).get();
+        }
+
+        return null;
     }
 }

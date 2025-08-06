@@ -1,13 +1,13 @@
 services:
   mysql:
-    image: mysql:8
+    image: mysql
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3307:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
     networks:
       - ims-network
@@ -19,7 +19,7 @@ services:
       - "5672:5672"     # RabbitMQ main port
       - "15672:15672"   # Management UI
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - ims-network
 
@@ -68,6 +68,8 @@ services:
   incident-service:
     build: ./incident-service
     container_name: incident-service
+    ports:
+      - "8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
@@ -92,34 +94,62 @@ services:
     restart: on-failure
 
 
-#  moderation-service:
-#    build: ./moderation-service
-#    container_name: moderation-service
-#    ports:
-#      - "8082:8082"
-#    environment:
-#      SPRING_PROFILES_ACTIVE: docker
-#      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MODERATION_DB_NAME}
-#      SPRING_DATASOURCE_USERNAME: ${MODERATION_DB_USER}
-#      SPRING_DATASOURCE_PASSWORD: ${MODERATION_DB_PASSWORD}
-#      RABBITMQ_HOST: rabbitmq
-#    networks:
-#      - ims-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#      mysql:
-#        condition: service_started
-#      rabbitmq:
-#        condition: service_started
-#      discovery-server:
-#        condition: service_started
-#    restart: on-failure
+  moderation-service:
+    build: ./moderation-service
+    container_name: moderation-service
+    ports:
+      - "8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MODERATION_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${MODERATION_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MODERATION_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+    networks:
+      - ims-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+    restart: on-failure
+
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${AUTH_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${AUTH_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${AUTH_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+    networks:
+      - ims-network
+
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+    restart: on-failure
 
 networks:
   ims-network:
     driver: bridge
 
 volumes:
-  mysql_data:
-  rabbitmq_data:
+  mysql-data:
+  rabbitmq-data:

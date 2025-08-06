@@ -8,5 +8,10 @@ CREATE DATABASE IF NOT EXISTS moderation_db;
 CREATE USER IF NOT EXISTS 'moderation_user'@'%' IDENTIFIED BY 'moderation_pass';
 GRANT ALL PRIVILEGES ON moderation_db.* TO 'moderation_user'@'%';
 
+-- auth baza
+CREATE DATABASE IF NOT EXISTS auth_db;
+CREATE USER IF NOT EXISTS 'auth_user'@'%' IDENTIFIED BY 'auth_pass';
+GRANT ALL PRIVILEGES ON auth_db.* TO 'auth_user'@'%';
+
 -- dodatno (opcionalno za testiranje)
 FLUSH PRIVILEGES;

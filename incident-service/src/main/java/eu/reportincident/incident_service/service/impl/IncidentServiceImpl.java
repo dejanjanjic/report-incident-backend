@@ -46,7 +46,6 @@ public class IncidentServiceImpl implements IncidentService {
 
     @Override
     public Incident findById(long id) {
-        // TODO: Anonymous users get only APPROVED incidents, ADMIN can get any status
         return modelMapper.map(incidentRepository.findById(id).orElseThrow(NotFoundException::new), Incident.class);
     }
 

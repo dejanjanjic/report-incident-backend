@@ -35,9 +35,8 @@ public class SecurityConfig {
         http
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**", "/login/**", "/oauth2/**", "/error").permitAll()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
@@ -49,16 +48,27 @@ public class SecurityConfig {
                                 return;
                             }
 
+                            // Check if already exist
+                            User user = userService.findUser(oauthUser);
                             String domain = email.substring(email.indexOf('@') + 1);
 
-                            if (domain.equalsIgnoreCase(requiredDomain) || domain.toLowerCase().endsWith("." + requiredDomain)) {
-                                User user = userService.processOAuth2User(oauthUser);
+                            if(user != null){
                                 String jwt = jwtService.generateToken(user);
                                 response.sendRedirect(frontendUrl + "/login-success?token=" + jwt);
-                            } else {
-                                String message = "Access denied. Only users with a '" + requiredDomain + "' domain are allowed.";
-                                redirectToFrontendWithError(response, message);
                             }
+                            // If doesn't exist try to create new user + check domain
+                            else {
+                                if (domain.equalsIgnoreCase(requiredDomain) || domain.toLowerCase().endsWith("." + requiredDomain)) {
+                                    User temp = userService.saveUser(oauthUser);
+                                    String jwt = jwtService.generateToken(temp);
+                                    response.sendRedirect(frontendUrl + "/login-success?token=" + jwt);
+                                } else {
+                                    String message = "Access denied. Only users with a '" + requiredDomain + "' domain are allowed.";
+                                    redirectToFrontendWithError(response, message);
+                                }
+                            }
+
+
                         })
                         .failureHandler((request, response, exception) -> {
                             String message = "Login failed. Please try again. Error: " + exception.getMessage();
