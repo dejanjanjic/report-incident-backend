@@ -25,9 +25,11 @@ jobs:
         run: mvn -B package -Dmaven.test.skip=true --file pom.xml
         working-directory: ./${{ matrix.service }}
 
-      - name: Prepare artifact for Docker build
-        run: cp target/*.jar ./app.jar
-        working-directory: ./${{ matrix.service }}
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-jar
+          path: ./${{ matrix.service }}/target/*.jar
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -47,7 +49,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # IZMJENA: Uklonjen 'path: source'. Kod se sada preuzima u glavni direktorijum.
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -57,7 +58,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # IZMJENA: Uklonjen 'working-directory'.
       - name: Create .env file
         run: |
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
@@ -75,11 +75,15 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
 
-      # IZMJENA: Uklonjen 'working-directory'.
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./
+
       - name: Pull latest images and run Docker Compose
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml pull
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+          docker-compose pull
+          docker-compose up -d
 
       - name: Wait for services to start
         run: |
@@ -89,28 +93,29 @@ jobs:
       - name: Run API tests
         run: |
           echo "--- Running API Health Checks ---"
-          
+                       
           echo "Testing Config Server..."
           curl -f http://localhost:8888/actuator/health || exit 1
-          
+            
           echo "Testing Discovery Server..."
           curl -f http://localhost:8761/actuator/health || exit 1
-          
+            
+            
           echo "Testing API Gateway..."
           curl -f http://localhost:8080/actuator/health || exit 1
+            
           
           echo "Testing Incident Service via Gateway..."
           curl -f http://localhost:8080/incident-service/actuator/health || exit 1
-          
+            
           echo "Testing Moderation Service via Gateway..."
           curl -f http://localhost:8080/moderation-service/actuator/health || exit 1
-          
+            
           echo "Testing Auth Service via Gateway..."
           curl -f http://localhost:8080/auth-service/actuator/health || exit 1
-          
+            
           echo "--- All health checks passed! ---"
 
-      # IZMJENA: Uklonjen 'working-directory'.
       - name: Stop containers
         if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down
+        run: docker-compose down
