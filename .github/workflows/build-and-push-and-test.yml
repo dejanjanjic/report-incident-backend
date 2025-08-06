@@ -80,6 +80,11 @@ jobs:
         with:
           path: ./
 
+      - name: Move jar into service folder
+        run: |
+          mkdir -p ./${{ matrix.service }}/target
+          mv ./downloaded-artifacts/*.jar ./${{ matrix.service }}/target/
+
       - name: Pull latest images and run Docker Compose
         run: |
           docker compose pull
