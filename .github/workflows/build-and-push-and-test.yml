@@ -31,19 +31,6 @@ jobs:
           name: ${{ matrix.service }}-jar
           path: ./${{ matrix.service }}/target/*.jar
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./${{ matrix.service }}
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
-
   test_api:
     needs: build_and_push
     runs-on: ubuntu-latest
@@ -75,15 +62,34 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
 
+      # Download sve artefakte (za sve servise)
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./
+          path: ./artifacts
 
-      - name: Move jar into service folder
+      # Vrati jar fajlove u njihove target foldere
+      - name: Place jars into service folders
         run: |
-          mkdir -p ./${{ matrix.service }}/target
-          mv ./downloaded-artifacts/*.jar ./${{ matrix.service }}/target/
+          for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
+          do
+            mkdir -p $service/target
+            mv ./artifacts/$service-jar/*.jar $service/target/
+          done
+
+      - name: Build Docker images using local jars
+        run: |
+          for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
+          do
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest $service
+          done
+
+      - name: Push Docker images
+        run: |
+          for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
+          do
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
+          done
 
       - name: Pull latest images and run Docker Compose
         run: |
@@ -98,27 +104,12 @@ jobs:
       - name: Run API tests
         run: |
           echo "--- Running API Health Checks ---"
-                       
-          echo "Testing Config Server..."
           curl -f http://localhost:8888/actuator/health || exit 1
-            
-          echo "Testing Discovery Server..."
           curl -f http://localhost:8761/actuator/health || exit 1
-            
-            
-          echo "Testing API Gateway..."
           curl -f http://localhost:8080/actuator/health || exit 1
-            
-          
-          echo "Testing Incident Service via Gateway..."
           curl -f http://localhost:8080/incident-service/actuator/health || exit 1
-            
-          echo "Testing Moderation Service via Gateway..."
           curl -f http://localhost:8080/moderation-service/actuator/health || exit 1
-            
-          echo "Testing Auth Service via Gateway..."
           curl -f http://localhost:8080/auth-service/actuator/health || exit 1
-            
           echo "--- All health checks passed! ---"
 
       - name: Stop containers
