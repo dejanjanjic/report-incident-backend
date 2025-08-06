@@ -3,7 +3,7 @@ name: CI - Build and Push Docker Images
 # Workflow se pokreće na svaki 'push' na 'main' granu
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 
 jobs:
