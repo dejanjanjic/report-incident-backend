@@ -71,8 +71,8 @@ jobs:
 
       - name: Pull latest images and run Docker Compose
         run: |
-          docker-compose pull
-          docker-compose up -d
+          docker compose pull
+          docker compose up -d
 
       - name: Wait for services to start
         run: |
@@ -107,4 +107,4 @@ jobs:
 
       - name: Stop containers
         if: always()
-        run: docker-compose down
+        run: docker compose down
