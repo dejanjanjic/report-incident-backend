@@ -1,0 +1,18 @@
+services:
+  config-server:
+    image: dejanjanjic1/config-server:latest
+
+  discovery-server:
+    image: dejanjanjic1/discovery-server:latest
+
+  api-gateway:
+    image: dejanjanjic1/api-gateway:latest
+
+  incident-service:
+    image: dejanjanjic1/incident-service:latest
+
+  moderation-service:
+    image: dejanjanjic1/moderation-service:latest
+
+  auth-service:
+    image: dejanjanjic1/auth-service:latest
