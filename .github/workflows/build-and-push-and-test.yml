@@ -1,0 +1,110 @@
+name: CI/CD - Build, Push, and Test
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [ 'config-server', 'discovery-server', 'api-gateway', 'incident-service', 'moderation-service', 'auth-service' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B package -Dmaven.test.skip=true --file pom.xml
+        working-directory: ./${{ matrix.service }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
+
+  test_api:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create .env file
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+          echo "INCIDENT_DB_NAME=${{ secrets.INCIDENT_DB_NAME }}" >> .env
+          echo "INCIDENT_DB_USER=${{ secrets.INCIDENT_DB_USER }}" >> .env
+          echo "INCIDENT_DB_PASSWORD=${{ secrets.INCIDENT_DB_PASSWORD }}" >> .env
+          echo "MODERATION_DB_NAME=${{ secrets.MODERATION_DB_NAME }}" >> .env
+          echo "MODERATION_DB_USER=${{ secrets.MODERATION_DB_USER }}" >> .env
+          echo "MODERATION_DB_PASSWORD=${{ secrets.MODERATION_DB_PASSWORD }}" >> .env
+          echo "AUTH_DB_NAME=${{ secrets.AUTH_DB_NAME }}" >> .env
+          echo "AUTH_DB_USER=${{ secrets.AUTH_DB_USER }}" >> .env
+          echo "AUTH_DB_PASSWORD=${{ secrets.AUTH_DB_PASSWORD }}" >> .env
+          echo "GIT_USERNAME=${{ secrets.GIT_USERNAME }}" >> .env
+          echo "GIT_PASSWORD=${{ secrets.GIT_PASSWORD }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+
+      - name: Pull latest images and run Docker Compose
+        run: |
+          docker-compose pull
+          docker-compose up -d
+
+      - name: Wait for services to start
+        run: |
+          echo "Waiting for 120 seconds for all services to initialize..."
+          sleep 120
+
+      - name: Run API tests
+        run: |
+          echo "--- Running API Health Checks ---"
+                       
+          echo "Testing Config Server..."
+          curl -f http://localhost:8888/actuator/health || exit 1
+            
+          echo "Testing Discovery Server..."
+          curl -f http://localhost:8761/actuator/health || exit 1
+            
+            
+          echo "Testing API Gateway..."
+          curl -f http://localhost:8080/actuator/health || exit 1
+            
+          
+          echo "Testing Incident Service via Gateway..."
+          curl -f http://localhost:8080/incident-service/actuator/health || exit 1
+            
+          echo "Testing Moderation Service via Gateway..."
+          curl -f http://localhost:8080/moderation-service/actuator/health || exit 1
+            
+          echo "Testing Auth Service via Gateway..."
+          curl -f http://localhost:8080/auth-service/actuator/health || exit 1
+            
+          echo "--- All health checks passed! ---"
+
+      - name: Stop containers
+        if: always()
+        run: docker-compose down
