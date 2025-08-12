@@ -62,13 +62,12 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
 
-      # Download sve artefakte (za sve servise)
+      # Download backend artefakte
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      # Vrati jar fajlove u njihove target foldere
       - name: Place jars into service folders
         run: |
           for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
@@ -77,16 +76,19 @@ jobs:
             mv ./artifacts/$service-jar/*.jar $service/target/
           done
 
-      - name: Build Docker images using local jars
+      - name: Build Docker images
         run: |
+          # Backend services
           for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
           do
             docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest $service
           done
+          # Frontend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ims-frontend:latest ./Frontend
 
       - name: Push Docker images
         run: |
-          for service in config-server discovery-server api-gateway incident-service moderation-service auth-service
+          for service in config-server discovery-server api-gateway incident-service moderation-service auth-service ims-frontend
           do
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
           done

@@ -87,13 +87,20 @@ public class IncidentServiceImpl implements IncidentService {
             predicates.add(cb.equal(root.get("subtype"), filterRequest.getIncidentSubtype()));
         }
 
-        // Filtriranje prema location
-        // TODO: Filter on given parameters, not only city name
-        if (filterRequest.getLocation() != null) {
-            predicates.add(cb.equal(root.get("location").get("city"), filterRequest.getLocation()));
+        // Filtriranje prema lokaciji (sadrži, a ne jednako)
+        if (filterRequest.getLocation() != null && !filterRequest.getLocation().isBlank()) {
+            String search = "%" + filterRequest.getLocation().toLowerCase() + "%";
+
+            Predicate cityLike = cb.like(cb.lower(root.get("location").get("city")), search);
+            Predicate addressLike = cb.like(cb.lower(root.get("location").get("address")), search);
+            Predicate stateLike = cb.like(cb.lower(root.get("location").get("state")), search);
+            Predicate countryLike = cb.like(cb.lower(root.get("location").get("country")), search);
+            Predicate zipcodeLike = cb.like(cb.lower(root.get("location").get("zipcode")), search);
+
+            predicates.add(cb.or(cityLike, addressLike, stateLike, countryLike, zipcodeLike));
         }
 
-        // Filtriranje prema approved
+        // Filtriranje prema statusu
         if (filterRequest.getStatus() != null) {
             predicates.add(cb.equal(root.get("status"), filterRequest.getStatus()));
         }
@@ -119,6 +126,7 @@ public class IncidentServiceImpl implements IncidentService {
 
         return new PageImpl<>(incidents, page, totalElements);
     }
+
 
     @Override
     public Page<Incident> findAll(Pageable page) {

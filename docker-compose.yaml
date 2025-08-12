@@ -145,7 +145,18 @@ services:
       discovery-server:
         condition: service_started
     restart: on-failure
-
+  ims-frontend:
+    build: ./Frontend
+    container_name: ims-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./Frontend/src:/opt/app/src
+    depends_on:
+      - api-gateway
+      - auth-service
+      - incident-service
+      - moderation-service
 networks:
   ims-network:
     driver: bridge

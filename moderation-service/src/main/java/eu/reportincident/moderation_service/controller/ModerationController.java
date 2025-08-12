@@ -25,8 +25,7 @@ public class    ModerationController {
 
     @PutMapping("/{incidentId}/status")
     public ResponseEntity<IncidentModeration> updateIncidentStatus(@PathVariable long incidentId, @RequestBody IncidentStatusUpdateRequest request) {
-        // TODO: Pass moderatorId, after authentication part
-        return ResponseEntity.ok(moderationService.updateIncidentStatus(incidentId, request.getStatus(), 1L));
+        return ResponseEntity.ok(moderationService.updateIncidentStatus(incidentId, request.getStatus(), request.getModerationId()));
     }
 
     @GetMapping("/incidents/{incidentId}")

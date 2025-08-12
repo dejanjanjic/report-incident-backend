@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class IncidentStatusUpdateRequest {
     private IncidentStatus status;
+    private Long moderationId;
 }

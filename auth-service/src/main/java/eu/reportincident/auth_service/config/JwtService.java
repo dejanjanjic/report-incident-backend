@@ -39,6 +39,7 @@ public class JwtService {
             UserDetails userDetails
     ) {
         if(userDetails instanceof User user){
+            extraClaims.put("id", user.getId());
             extraClaims.put("role", user.getRole());
         }
         return Jwts.builder()
