@@ -1,0 +1,238 @@
+<!-- Header -->
+<mat-toolbar color="primary" class="main-header">
+  <span class="header-title">
+    <mat-icon>report_problem</mat-icon>
+    Prijava incidenata
+  </span>
+  <span class="spacer"></span>
+  <button mat-raised-button color="accent" class="logout-button" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    Odjava
+  </button>
+</mat-toolbar>
+
+<!-- Main Content -->
+<div class="main-container">
+  
+  <!-- Report Incident Section -->
+  <mat-card class="report-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>add_alert</mat-icon>
+        Prijavite incident
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="report-form">
+        
+        <!-- Type Selection -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Vrsta incidenta *</mat-label>
+          <mat-select [(value)]="reportType" (selectionChange)="onReportTypeChange()" [disabled]="isSubmitting">
+            <mat-option value="">Izaberite vrstu</mat-option>
+            @for (type of incidentTypes; track type.value) {
+              <mat-option [value]="type.value">
+                {{type.label}}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Subtype Selection -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Podvrsta incidenta</mat-label>
+          <mat-select [(value)]="reportSubtype" [disabled]="!reportType || isSubmitting">
+            <mat-option value="">Izaberite podvrstu</mat-option>
+            @for (subtype of reportFilteredSubtypes; track subtype.value) {
+              <mat-option [value]="subtype.value">
+                {{subtype.label}}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Location Display -->
+        <mat-form-field appearance="outline" class="form-field location-field">
+          <mat-label>Lokacija *</mat-label>
+          <input matInput readonly [value]="getLocationDisplay()" placeholder="Kliknite na mapu da izaberete lokaciju">
+          <mat-icon matSuffix [class.location-selected]="reportLocation">place</mat-icon>
+        </mat-form-field>
+
+        <!-- Description -->
+        <mat-form-field appearance="outline" class="form-field description-field">
+          <mat-label>Opis incidenta</mat-label>
+          <textarea matInput 
+                    [(ngModel)]="reportDescription" 
+                    rows="4" 
+                    maxlength="1000"
+                    placeholder="Detaljno opišite incident..."
+                    [disabled]="isSubmitting"></textarea>
+          <mat-hint>{{reportDescription.length}}/1000</mat-hint>
+        </mat-form-field>
+
+        <!-- File Upload -->
+        <div class="file-upload-section">
+          <input type="file" 
+                 #fileInput
+                 multiple 
+                 accept="image/*" 
+                 (change)="onFileSelected($event)"
+                 [disabled]="isSubmitting"
+                 style="display: none;">
+          
+          <button mat-stroked-button 
+                  type="button" 
+                  (click)="fileInput.click()"
+                  [disabled]="isSubmitting"
+                  class="upload-button">
+            <mat-icon>add_photo_alternate</mat-icon>
+            Dodaj slike
+          </button>
+          
+          @if (selectedFiles.length > 0) {
+            <div class="selected-files">
+              <span class="files-count">{{selectedFiles.length}} fajl(ova) odabrano</span>
+              <div class="file-list">
+                @for (file of selectedFiles; track file.name) {
+                  <span class="file-chip">{{file.name}}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <div class="submit-section">
+          <button mat-raised-button 
+                  color="accent" 
+                  (click)="submitIncident()"
+                  [disabled]="!reportType || !reportLocation || isSubmitting"
+                  class="submit-button">
+            @if (isSubmitting) {
+              <mat-spinner diameter="20" class="submit-spinner"></mat-spinner>
+            } @else {
+              <mat-icon>send</mat-icon>
+            }
+            {{isSubmitting ? 'Prijavljivanje...' : 'Prijavite incident'}}
+          </button>
+          
+          <button mat-stroked-button 
+                  (click)="resetReportForm()"
+                  [disabled]="isSubmitting"
+                  class="reset-button">
+            <mat-icon>refresh</mat-icon>
+            Resetuj
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_alt</mat-icon>
+        Filteri za incidente
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="filters-grid">
+        
+        <!-- Type Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Vrsta incidenta</mat-label>
+          <mat-select [(value)]="selectedType" (selectionChange)="onTypeChange()">
+            <mat-option value="">Sve vrste</mat-option>
+            @for (type of incidentTypes; track type.value) {
+              <mat-option [value]="type.value">
+                {{type.label}}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Subtype Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Podvrsta incidenta</mat-label>
+          <mat-select [(value)]="selectedSubtype" (selectionChange)="onSubtypeChange()" [disabled]="!selectedType">
+            <mat-option value="">Sve podvrste</mat-option>
+            @for (subtype of filteredSubtypes; track subtype.value) {
+              <mat-option [value]="subtype.value">
+                {{subtype.label}}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Time Range Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Vremenski period</mat-label>
+          <mat-select [(value)]="selectedTimeRange" (selectionChange)="onTimeRangeChange()">
+            @for (range of timeRanges; track range.value) {
+              <mat-option [value]="range.value">
+                {{range.label}}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Location Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Lokacija</mat-label>
+          <input matInput [(ngModel)]="selectedLocation" (input)="onLocationChange()" placeholder="Unesite lokaciju...">
+        </mat-form-field>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <button mat-stroked-button (click)="clearFilters()" class="clear-button">
+          <mat-icon>clear_all</mat-icon>
+          Obriši filtere
+        </button>
+        @if (selectedType || selectedSubtype || selectedLocation) {
+          <div class="active-filters">
+            <span class="filters-label">Aktivni filteri:</span>
+            <div class="chips-container">
+              @if (selectedType) {
+                <span class="filter-chip">
+                  {{getTypeLabel(selectedType)}}
+                  <mat-icon (click)="selectedType = ''; onTypeChange()">close</mat-icon>
+                </span>
+              }
+              @if (!selectedType && selectedSubtype) {
+                <span class="filter-chip">
+                  {{getSubtypeLabel(selectedSubtype)}}
+                  <mat-icon (click)="selectedSubtype = ''; onSubtypeChange()">close</mat-icon>
+                </span>
+              }
+              @if (!selectedType && !selectedSubtype && selectedLocation) {
+                <span class="filter-chip">
+                  {{selectedLocation}}
+                  <mat-icon (click)="selectedLocation = ''; onLocationChange()">close</mat-icon>
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Map Section -->
+  <mat-card class="map-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>map</mat-icon>
+        Mapa incidenata
+        <span class="map-instruction">Kliknite na mapu da izaberete lokaciju za prijavu</span>
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content class="map-content">
+      <app-incident-map #incidentMap (locationSelected)="onMapLocationSelected($event)" [reportingEnabled]="true"></app-incident-map>
+    </mat-card-content>
+  </mat-card>
+</div>

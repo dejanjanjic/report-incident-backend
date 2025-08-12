@@ -1,0 +1,112 @@
+<!-- Header -->
+<mat-toolbar color="primary" class="main-header">
+  <span class="header-title">
+    <mat-icon>report_problem</mat-icon>
+    Sistem za prijavu incidenata
+  </span>
+  <span class="spacer"></span>
+  <button mat-raised-button color="accent" class="login-button" (click)="loginWithGoogle()">
+    <mat-icon>login</mat-icon>
+    Google prijava
+  </button>
+</mat-toolbar>
+
+<!-- Main Content -->
+<div class="main-container">
+  
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_alt</mat-icon>
+        Filteri za incidente
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="filters-grid">
+        
+        <!-- Type Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Vrsta incidenta</mat-label>
+          <mat-select [(value)]="selectedType" (selectionChange)="onTypeChange()">
+            <mat-option value="">Sve vrste</mat-option>
+            <mat-option *ngFor="let type of incidentTypes" [value]="type.value">
+              {{type.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Subtype Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Podvrsta incidenta</mat-label>
+          <mat-select [(value)]="selectedSubtype" (selectionChange)="onSubtypeChange()" [disabled]="!selectedType">
+            <mat-option value="">Sve podvrste</mat-option>
+            <mat-option *ngFor="let subtype of filteredSubtypes" [value]="subtype.value">
+              {{subtype.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Time Range Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Vremenski period</mat-label>
+          <mat-select [(value)]="selectedTimeRange" (selectionChange)="onTimeRangeChange()">
+            <mat-option *ngFor="let range of timeRanges" [value]="range.value">
+              {{range.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Location Filter -->
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Lokacija</mat-label>
+          <input matInput [(ngModel)]="selectedLocation" (input)="onLocationChange()" placeholder="Unesite lokaciju...">
+        </mat-form-field>
+
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <button mat-stroked-button (click)="clearFilters()" class="clear-button">
+          <mat-icon>clear_all</mat-icon>
+          Obriši filtere
+        </button>
+        
+        <!-- Active Filters Display -->
+        <div class="active-filters" *ngIf="selectedType || selectedSubtype || selectedLocation">
+          <span class="filters-label">Aktivni filteri:</span>
+          <div class="chips-container">
+            <span *ngIf="selectedType" class="filter-chip">
+              {{getTypeLabel(selectedType)}}
+              <mat-icon (click)="selectedType = ''; onTypeChange()">close</mat-icon>
+            </span>
+            <span *ngIf="selectedSubtype" class="filter-chip">
+              {{getSubtypeLabel(selectedSubtype)}}
+              <mat-icon (click)="selectedSubtype = ''; onSubtypeChange()">close</mat-icon>
+            </span>
+            <span *ngIf="selectedLocation" class="filter-chip">
+              {{selectedLocation}}
+              <mat-icon (click)="selectedLocation = ''; onLocationChange()">close</mat-icon>
+            </span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Map Section -->
+  <mat-card class="map-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>map</mat-icon>
+        Mapa incidenata
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content class="map-content">
+      <app-incident-map #incidentMap></app-incident-map>
+    </mat-card-content>
+  </mat-card>
+
+</div>
