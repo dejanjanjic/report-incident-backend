@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
 import { IncidentMap } from "../incident-map/incident-map";
 
 @Component({
@@ -22,6 +24,7 @@ import { IncidentMap } from "../incident-map/incident-map";
     MatInputModule,
     MatCardModule,
     MatIconModule,
+    MatSnackBarModule,
     IncidentMap
   ],
   templateUrl: './welcome-page.html',
@@ -61,12 +64,49 @@ export class WelcomePage implements OnInit, AfterViewInit {
 
   filteredSubtypes: any[] = [];
 
+  constructor(
+    private route: ActivatedRoute,
+    private snackBar: MatSnackBar
+  ) {}
+
   ngOnInit() {
+    console.log("0");
     this.updateSubtypes();
+    this.checkForLoginError();
   }
 
   ngAfterViewInit() {
     this.applyFilters();
+  }
+
+  private checkForLoginError() {
+    console.log("1");
+    this.route.queryParams.subscribe(params => {
+      if (params['error']) {
+        console.log("3");
+        const errorMessage = decodeURIComponent(params['error']);
+        this.showErrorSnackbar(errorMessage);
+
+        const url = this.removeQueryParam(window.location.href, 'error');
+        window.history.replaceState({}, document.title, url);
+      }
+    });
+  }
+
+  private showErrorSnackbar(message: string) {
+    console.log("2");
+    this.snackBar.open(message, 'Zatvori', {
+      duration: 6000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private removeQueryParam(url: string, param: string): string {
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete(param);
+    return urlObj.pathname + urlObj.search + urlObj.hash;
   }
 
   onTypeChange() {
@@ -99,7 +139,7 @@ export class WelcomePage implements OnInit, AfterViewInit {
 
   applyFilters() {
     if (!this.incidentMap) {
-        return;
+      return;
     }
 
     const filters = {
@@ -108,7 +148,7 @@ export class WelcomePage implements OnInit, AfterViewInit {
       timeRange: this.selectedTimeRange,
       location: this.selectedLocation
     };
-    
+
     console.log('Primena filtera:', filters);
     this.incidentMap.updateIncidents(filters);
   }

@@ -81,6 +81,6 @@ public class SecurityConfig {
 
     private void redirectToFrontendWithError(HttpServletResponse response, String message) throws java.io.IOException {
         String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
-        response.sendRedirect(frontendUrl + "/login?error=" + encodedMessage);
+        response.sendRedirect(frontendUrl + "/welcome?error=" + encodedMessage);
     }
 }
